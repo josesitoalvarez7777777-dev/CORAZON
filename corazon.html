@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corazón de Partículas en HTML</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #050508;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .texto {
+            position: absolute;
+            color: #ff3366;
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-shadow: 0 0 15px rgba(255, 51, 102, 0.8), 0 0 30px rgba(255, 51, 102, 0.4);
+            pointer-events: none;
+            letter-spacing: 2px;
+            text-align: center;
+            animation: pulse 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.98); opacity: 0.85; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="heartCanvas"></canvas>
+    <div class="texto">❤️ TE QUIERO HERMANO PERO ERES UN KBRO P ❤️</div>
+
+    <script>
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Ecuación matemática del corazón
+        function pointOnHeart(t) {
+            return {
+                x: 16 * Math.pow(Math.sin(t), 3),
+                y: -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))
+            };
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.t = Math.random() * Math.PI * 2;
+                const pos = pointOnHeart(this.t);
+                
+                // Escala según el tamaño de la pantalla
+                const scale = Math.min(width, height) / 35;
+                
+                this.baseX = width / 2 + pos.x * scale;
+                this.baseY = height / 2 + pos.y * scale;
+
+                this.x = this.baseX + (Math.random() - 0.5) * 10;
+                this.y = this.baseY + (Math.random() - 0.5) * 10;
+
+                this.size = Math.random() * 2.5 + 1;
+                this.speedX = (Math.random() - 0.5) * 1.2;
+                this.speedY = (Math.random() - 0.5) * 1.2;
+
+                this.color = `hsl(${330 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`;
+                this.alpha = Math.random() * 0.8 + 0.2;
+                this.maxLife = Math.random() * 80 + 40;
+                this.life = 0;
+            }
+
+            update(beatScale) {
+                this.life++;
+                if (this.life >= this.maxLife) {
+                    this.reset();
+                }
+
+                // Efecto de latido pulsante
+                const dx = (this.baseX - width / 2) * (beatScale - 1);
+                const dy = (this.baseY - height / 2) * (beatScale - 1);
+
+                this.x += this.speedX + dx * 0.05;
+                this.y += this.speedY + dy * 0.05;
+                this.alpha -= 0.005;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Crear partículas iniciales
+        const particleCount = 400;
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        let step = 0;
+
+        function animate() {
+            // Fondo con leve rastro brillante
+            ctx.fillStyle = 'rgba(5, 5, 8, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            step += 0.05;
+            // Ritmo de latido suave
+            const beatScale = 1 + Math.sin(step) * 0.08 + Math.pow(Math.sin(step * 2), 4) * 0.05;
+
+            particles.forEach(p => {
+                p.update(beatScale);
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
